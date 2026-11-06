@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.corpusfetch/corpusfetch",
+  "title": "CorpusFetch",
+  "description": "O(1) symptom routing, semantic search, and warrant-first fetch over 700+ concluded records.",
+  "version": "1.0.3",
+  "websiteUrl": "https://corpusfetch.com",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.corpusfetch.com/mcp"
+    }
+  ],
+  "tools": [
+    {
+      "name": "corpusfetch_lookup_exception",
+      "description": "Route a Python exception class to candidate record addresses."
+    },
+    {
+      "name": "corpusfetch_lookup_symptom",
+      "description": "Route a runtime symptom key to candidate record addresses."
+    },
+    {
+      "name": "corpusfetch_search",
+      "description": "Search the corpus by natural language keywords or concepts."
+    },
+    {
+      "name": "corpusfetch_fetch_warrant",
+      "description": "Fetch the ~220-token precondition seal. Call before the record."
+    },
+    {
+      "name": "corpusfetch_fetch_record",
+      "description": "Fetch the record body: .md (~1500 tokens) or .py (~300 tokens)."
+    }
+  ]
+}
