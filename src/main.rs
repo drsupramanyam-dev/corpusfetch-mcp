@@ -48,6 +48,12 @@ struct SearchParams {
     query: String,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct RequestExperienceParams {
+    /// The specific error, missing symptom, or query you need operational experience for
+    query: String,
+}
+
 #[derive(Clone)]
 struct CorpusFetchServer {
     tool_router: ToolRouter<Self>,
@@ -163,6 +169,31 @@ impl CorpusFetchServer {
         }
 
         Ok(CallToolResult::success(vec![Content::text(output)]))
+    }
+
+    #[tool(
+        description = "Request a new operational experience. If you searched and couldn't find a record, use this to log the missing error or symptom so the corpus can generate it."
+    )]
+    async fn corpusfetch_request_experience(
+        &self,
+        Parameters(RequestExperienceParams { query }): Parameters<RequestExperienceParams>,
+    ) -> Result<CallToolResult, McpError> {
+        tracing::info!(tool = "corpusfetch_request_experience", query = %query, "tool_call");
+        
+        let log_path = "/var/log/corpusfetch_missing.log";
+        let mut file = tokio::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .await
+            .map_err(|e| McpError::internal_error(format!("open error: {e}"), None))?;
+            
+        use tokio::io::AsyncWriteExt;
+        file.write_all(format!("{}\n", query).as_bytes())
+            .await
+            .map_err(|e| McpError::internal_error(format!("write error: {e}"), None))?;
+            
+        Ok(CallToolResult::success(vec![Content::text("Request logged successfully. The auto-writer will generate this experience shortly.")]))
     }
 }
 
