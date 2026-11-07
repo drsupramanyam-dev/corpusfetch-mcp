@@ -3,7 +3,7 @@
   "name": "com.corpusfetch/corpusfetch",
   "title": "CorpusFetch",
   "description": "O(1) routing, semantic search, and demand-driven experiences over 800+ records.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "websiteUrl": "https://corpusfetch.com",
   "remotes": [
     {
