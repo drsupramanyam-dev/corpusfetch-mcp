@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.corpusfetch/corpusfetch",
   "title": "CorpusFetch",
-  "description": "O(1) symptom routing, semantic search, and warrant-first fetch over 700+ concluded records.",
-  "version": "1.0.3",
+  "description": "O(1) routing, semantic search, and demand-driven experiences over 800+ records.",
+  "version": "1.0.4",
   "websiteUrl": "https://corpusfetch.com",
   "remotes": [
     {
@@ -31,6 +31,10 @@
     {
       "name": "corpusfetch_fetch_record",
       "description": "Fetch the record body: .md (~1500 tokens) or .py (~300 tokens)."
+    },
+    {
+      "name": "corpusfetch_request_experience",
+      "description": "Request a new operational experience if a search fails. The corpus will generate it."
     }
   ]
 }
