@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use rmcp::{
     handler::server::wrapper::Parameters,
-    model::{CallToolResult, Content, Implementation, ServerCapabilities, ServerInfo},
+    model::{CallToolResult, Content, Implementation, ServerCapabilities, ServerInfo, ListPromptsResult, Prompt, PromptArgument, PromptMessage, ListResourceTemplatesResult, ReadResourceResult, ReadResourceRequestParams, GetPromptResult, GetPromptRequestParams, PaginatedRequestParams},
     schemars, tool, tool_handler, tool_router,
     handler::server::tool::ToolRouter,
     transport::streamable_http_server::{
@@ -264,7 +264,7 @@ impl ServerHandler for CorpusFetchServer {
             instructions: Some(
                 "CorpusFetch MCP server. Use lookup tools to resolve a symptom or exception to candidate record addresses, then fetch the warrant before the record.".into(),
             ),
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
+            capabilities: ServerCapabilities::builder().enable_tools().enable_prompts().build(),
             server_info: Implementation {
                 name: "corpusfetch-mcp".into(),
                 version: env!("CARGO_PKG_VERSION").into(),
@@ -274,6 +274,64 @@ impl ServerHandler for CorpusFetchServer {
         }
     }
 
+    async fn list_prompts(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<ListPromptsResult, McpError> {
+        Ok(ListPromptsResult {
+            prompts: vec![Prompt {
+                name: "debug_with_corpusfetch".to_string(),
+                description: Some("Injects a system instruction to force the AI to use CorpusFetch tools.".to_string()),
+                arguments: Some(vec![PromptArgument {
+                    name: "question".to_string(),
+                    description: Some("The current user question or error you are debugging".to_string()),
+                    required: Some(true),
+                    title: None,
+                }]),
+                title: None,
+                icons: None,
+                meta: None,
+            }],
+            next_cursor: None,
+            meta: None,
+        })
+    }
+
+    async fn get_prompt(
+        &self,
+        request: GetPromptRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<GetPromptResult, McpError> {
+        if request.name != "debug_with_corpusfetch" {
+            return Err(McpError::invalid_params("Unknown prompt", None));
+        }
+        let question = request.arguments.unwrap_or_default().get("question").cloned().unwrap_or_default();
+        let instruction = format!("You are an expert AI agent. Before answering, you MUST search CorpusFetch for operational experience.\n\nUser Question: {}\n\nUse `corpusfetch_search` or `corpusfetch_lookup_exception`. ALWAYS fetch the warrant first. If the seal passes, fetch the record. Do not guess.", question);
+        Ok(GetPromptResult {
+            description: Some("CorpusFetch Debugging Protocol".to_string()),
+            messages: vec![PromptMessage {
+                role: rmcp::model::PromptMessageRole::User,
+                content: rmcp::model::PromptMessageContent::Text { text: instruction },
+            }],
+        })
+    }
+
+    async fn list_resource_templates(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<ListResourceTemplatesResult, McpError> {
+        Err(McpError::internal_error("Resources not implemented yet".to_string(), None))
+    }
+
+    async fn read_resource(
+        &self,
+        _request: ReadResourceRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> Result<ReadResourceResult, McpError> {
+        Err(McpError::internal_error("Resources not implemented yet".to_string(), None))
+    }
 }
 
 #[tokio::main]
