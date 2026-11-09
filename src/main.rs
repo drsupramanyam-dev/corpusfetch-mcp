@@ -334,6 +334,70 @@ impl ServerHandler for CorpusFetchServer {
     }
 }
 
+
+async fn handle_a2a(axum::Json(payload): axum::Json<serde_json::Value>) -> impl axum::response::IntoResponse {
+    let query = payload.pointer("/params/message/parts/0/text")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    let task_id = payload.pointer("/params/id").and_then(|v| v.as_str()).unwrap_or("task-1");
+    let rpc_id = payload.get("id").cloned().unwrap_or(serde_json::json!(1));
+
+    // Simple search logic
+    let llms_path = PathBuf::from("/var/www/corpusfetch/llms.txt");
+    let mut found_slug = String::new();
+    
+    if let Ok(content) = tokio::fs::read_to_string(&llms_path).await {
+        let query_lower = query.to_lowercase();
+        let terms: Vec<&str> = query_lower.split_whitespace().collect();
+        let mut best_score = 0;
+        
+        for line in content.lines() {
+            if let Some(start) = line.find('[') {
+                if let Some(end) = line.find(']') {
+                    let title = &line[start+1..end];
+                    let title_lower = title.to_lowercase();
+                    let score = terms.iter().filter(|&&t| title_lower.contains(t)).count();
+                    
+                    if score > best_score {
+                        best_score = score;
+                        if let Some(url_start) = line.find("(http") {
+                            if let Some(url_end) = line.find(')') {
+                                let url = &line[url_start+1..url_end];
+                                let slug = url.trim_end_matches(".md").split('/').last().unwrap_or("");
+                                found_slug = slug.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let text = if !found_slug.is_empty() {
+        format!("I found a match in CorpusFetch. Please fetch the warrant here: https://corpusfetch.com/c/{}.warrant.json", found_slug)
+    } else {
+        "I could not find a direct match in the corpus. Try rephrasing or request a new experience via the MCP tools.".to_string()
+    };
+
+    let response = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": rpc_id,
+        "result": {
+            "id": task_id,
+            "status": { "state": "completed" },
+            "artifacts": [{
+                "parts": [{
+                    "type": "text",
+                    "text": text
+                }]
+            }]
+        }
+    });
+
+    (axum::http::StatusCode::OK, axum::Json(response))
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -356,7 +420,9 @@ async fn main() -> anyhow::Result<()> {
             },
         );
 
-    let app = axum::Router::new().route_service("/mcp", service);
+    let app = axum::Router::new()
+        .route_service("/mcp", service)
+        .route("/a2a", axum::routing::post(handle_a2a));
     let listener = tokio::net::TcpListener::bind("127.0.0.1:8000").await?;
     tracing::info!("corpusfetch-mcp listening on 127.0.0.1:8000/mcp");
     axum::serve(listener, app).await?;
