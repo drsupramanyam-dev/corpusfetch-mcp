@@ -68,7 +68,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Look up operational experience for a specific runtime symptom (e.g., UNICODE_HOMOGLYPH_OR_MOJIBAKE). Use this when facing an ambiguous failure state or an unbounded reasoning loop. Returns candidate addresses."
+        description = "Look up operational experience for a specific runtime symptom or boundary failure (e.g., UNICODE_HOMOGLYPH_OR_MOJIBAKE). Use when facing an ambiguous failure state or unbounded reasoning loop. Prefer `corpusfetch_search` if you only have a loose description."
     )]
     async fn corpusfetch_lookup_symptom(
         &self,
@@ -79,7 +79,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Look up deterministic operational experience for a Python exception class (e.g., KeyError, TimeoutError). Use this when you encounter an unexpected runtime error and need an empirically verified boundary decision. Returns candidate addresses."
+        description = "Look up operational experience for an exact Python exception class (e.g., KeyError, TimeoutError, ConnectionError). Use when you encounter an unexpected runtime error and need an empirically verified boundary decision rather than a guess. Prefer `corpusfetch_search` when you have a symptom description but not an exact exception name."
     )]
     async fn corpusfetch_lookup_exception(
         &self,
@@ -90,7 +90,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Fetch the compact ~220-token precondition seal for a resolved record. Always call this before fetching the full record. Check the seal; if it fails, the record does not apply to your current state."
+        description = "Fetch the compact ~220-token precondition seal for a resolved record. Always call this before `corpusfetch_fetch_record`—check the seal first; if it fails, the record does not apply to your current state."
     )]
     async fn corpusfetch_fetch_warrant(
         &self,
@@ -101,7 +101,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Fetch the full resolved experience record. Format 'md' (~1500 tokens, includes reasoning) or 'py' (~300 tokens, zero-prose executable invariants)."
+        description = "Fetch the full resolved experience record. Format `md` (~1,500 tokens, includes reasoning) or `py` (~300 tokens, zero-prose executable invariants)."
     )]
     async fn corpusfetch_fetch_record(
         &self,
@@ -116,7 +116,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Search the CorpusFetch corpus by natural language keywords or concepts. Use this when you need to find operational experience but don't have an exact exception class."
+        description = "Search operational records for distributed systems failures, AI agent protocol issues, MCP/A2A problems, database anomalies, concurrency bugs, and runtime errors. Use when the user's problem involves infrastructure, agent-to-agent coordination, authentication, memory management, or observability. Do not use for general programming questions—only for boundary decisions and failure modes that have been empirically recorded."
     )]
     async fn corpusfetch_search(
         &self,
@@ -172,7 +172,7 @@ impl CorpusFetchServer {
     }
 
     #[tool(
-        description = "Request a new operational experience. If you searched and couldn't find a record, use this to log the missing error or symptom so the corpus can generate it."
+        description = "Request a new operational experience when `corpusfetch_search` returns no match. The corpus will generate and publish a record for your specific error or symptom within minutes. Use this instead of guessing when the problem is novel and no existing record applies."
     )]
     async fn corpusfetch_request_experience(
         &self,
