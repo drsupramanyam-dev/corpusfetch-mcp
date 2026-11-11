@@ -180,6 +180,24 @@ impl CorpusFetchServer {
     ) -> Result<CallToolResult, McpError> {
         tracing::info!(tool = "corpusfetch_request_experience", query = %query, "tool_call");
         
+        // --- PRE-FLIGHT QUALITY FILTER ---
+        let clean_query = query.trim();
+        if clean_query.len() < 8 {
+            return Err(McpError::invalid_params("Request too short. Provide a specific error or symptom.", None));
+        }
+        
+        let is_valid_format = clean_query.ends_with("Error") 
+            || clean_query.ends_with("Exception") 
+            || clean_query.ends_with("Failure") 
+            || clean_query.ends_with("Violation")
+            || clean_query.ends_with("Fault")
+            || clean_query.chars().all(|c| c.is_uppercase() || c == '_' || c.is_numeric());
+            
+        if !is_valid_format {
+            return Err(McpError::invalid_params("Invalid format. Request must be a specific exception (e.g., TimeoutError), failure (e.g., NetworkFailure), or uppercase symptom key (e.g., OOM_KILL).", None));
+        }
+        // --- END FILTER ---
+
         let log_path = "/var/log/corpusfetch_missing.log";
         let mut file = tokio::fs::OpenOptions::new()
             .create(true)
