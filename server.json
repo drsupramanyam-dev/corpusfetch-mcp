@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.corpusfetch/corpusfetch",
   "title": "CorpusFetch",
-  "description": "O(1) routing, semantic search, A2A tasks, and demand-driven experiences over 800+ records.",
-  "version": "1.0.6",
+  "description": "O(1) routing, semantic search, and quality-filtered demand-driven experiences over 800+ records.",
+  "version": "1.0.7",
   "websiteUrl": "https://corpusfetch.com",
   "remotes": [
     {
